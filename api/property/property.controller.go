@@ -2,6 +2,7 @@ package property
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -31,7 +32,7 @@ func SaveExcel(c *gin.Context) {
 		})
 		return
 	}
-	print("[file] saved")
+	log.Println("[file] saved")
 	saveExcelInDB(newFileName, c)
 }
 
@@ -49,6 +50,30 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	/*
 		change sheet title name
 	*/
+	rows, err := xlsx.Rows("All")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var count = 0
+	headers := []string{"Division", "Station", "Sector", "Group", "Flat No.", "Reserve price", "EMD"}
+	for rows.Next() {
+		row := rows.Columns()
+		var header_slice = row
+		log.Println(header_slice)
+		for _, val := range row {
+			if contains(headers, val) {
+				count++
+			}
+		}
+		break
+	}
+	if count == 7 {
+		log.Println("Valid xlsx")
+	} else {
+		log.Println("Invalid xlsx")
+	}
+
 	for _, row := range xlsx.GetRows("Sheet1") {
 
 		_ = row
@@ -62,4 +87,13 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 	}
 
+}
+
+func contains(s []string, e string) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }
