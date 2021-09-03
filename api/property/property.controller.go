@@ -88,7 +88,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		reversePrice, errReversePrice := strconv.Atoi(row[5])
 		emd, errEMD := strconv.Atoi(row[6])
 
-		if errReversePrice == nil || errEMD == nil {
+		if errReversePrice == nil || errEMD == nil { //this should be and
 
 			var temp = PropertyDTO{
 				Division:     row[0],
