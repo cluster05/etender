@@ -56,11 +56,14 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 	var count = 0
 	headers := []string{"Division", "Station", "Sector", "Group", "Flat No.", "Reserve price", "EMD"}
+	missingColumn := []string{}
 	for rows.Next() {
 		row := rows.Columns()
 		for i, val := range row {
 			if headers[i] == val {
 				count++
+			} else {
+				missingColumn = append(missingColumn, val) //storing missing columns
 			}
 		}
 		break
@@ -71,8 +74,9 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	} else {
 
 		c.JSON(401, gin.H{
-			"message":     "error in excel file",
-			"isvalidfile": isValidExcel,
+			"message":       "error in excel file",
+			"isvalidfile":   isValidExcel,
+			"missingColumn": missingColumn,
 		})
 
 	}
