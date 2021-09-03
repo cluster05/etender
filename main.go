@@ -13,7 +13,6 @@ func main() {
 
 	router := gin.Default()
 	//cors file updated
-	//dev added
 	router.Use(cors.Default())
 
 	property.Routes(router)
