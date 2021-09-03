@@ -1,4 +1,4 @@
-CREATE DATABASE etendorDB
+CREATE DATABASE tenderDB;
 
 
 CREATE TABLE division(
@@ -24,6 +24,6 @@ CREATE TABLE fre(
     emd VARCHAR(50) NOT NULL,
     ssgId INT,
     FOREIGN KEY (ssgId) REFERENCES ssg(ssgId)
-)
+);
 
 

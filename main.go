@@ -12,7 +12,6 @@ const PORT = ":3000"
 func main() {
 
 	router := gin.Default()
-	//cors file updated
 	router.Use(cors.Default())
 
 	property.Routes(router)
