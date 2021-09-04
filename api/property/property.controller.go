@@ -14,6 +14,12 @@ import (
 	"github.com/google/uuid"
 )
 
+/*
+	TODO :
+	handler error message in one place
+	handler success message in one place
+*/
+
 func SaveExcel(c *gin.Context) {
 
 	file, err := c.FormFile("file")
@@ -48,8 +54,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		return
 	}
 
-	// var propertyDTO []PropertyDTO
-
 	rows, err := xlsx.Rows("All")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -70,12 +74,10 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	if count == 7 {
 		isValidExcel = true
 	} else {
-
 		c.JSON(401, gin.H{
 			"message":     "error in excel file",
 			"isvalidfile": isValidExcel,
 		})
-
 	}
 
 	mySql := mysql.MysqlDB()
@@ -93,9 +95,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		reversePrice, errReversePrice := strconv.Atoi(row[5])
 		emd, errEMD := strconv.Atoi(row[6])
 
-		/*
-			handler uppercase lower case to avoid duplicate entry
-		*/
 		var temp = PropertyDTO{
 			Division:     strings.ToLower(row[0]),
 			Station:      row[1],
