@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/gin-gonic/gin"
@@ -79,33 +80,73 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 	mySql := mysql.MysqlDB()
 
+	type SSGView struct {
+		uniquestream string
+		ssgId        int
+	}
+
+	mapperDivison := make(map[string]int)
+	// mapperSSG := make(map[string]SSGView)
+
 	for i, row := range xlsx.GetRows("All") {
 
 		reversePrice, errReversePrice := strconv.Atoi(row[5])
 		emd, errEMD := strconv.Atoi(row[6])
 
-		if errReversePrice == nil || errEMD == nil {
+		/*
+			handler uppercase lower case to avoid duplicate entry
+		*/
+		var temp = PropertyDTO{
+			Division:     strings.ToLower(row[0]),
+			Station:      row[1],
+			Sector:       row[2],
+			Group:        row[3],
+			FlatNo:       row[4],
+			ReversePrice: reversePrice,
+			EMD:          emd,
+		}
 
-			var temp = PropertyDTO{
-				Division:     row[0],
-				Station:      row[1],
-				Sector:       row[2],
-				Group:        row[3],
-				FlatNo:       row[4],
-				ReversePrice: reversePrice,
-				EMD:          emd,
+		if errReversePrice == nil && errEMD == nil && isValidEntry(temp) {
+
+			uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
+
+			stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
+			stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
+			stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
+			defer stmtDivision.Close()
+			defer stmtSSG.Close()
+			defer stmtFRE.Close()
+
+			if errDivison != nil && errSSG != nil && errFRE != nil {
+				c.JSON(201, gin.H{
+					"message": "error in query writring contact developer",
+				})
+				defer mySql.Close()
 			}
 
-			stmt, err := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
-			if err != nil {
-				fmt.Printf("[Testsql] Error %v\n", err.Error())
-			}
-			defer stmt.Close()
+			resDivison, errExecDivision := stmtDivision.Exec(temp.Division)
 
-			result, err := stmt.Exec(temp.Division)
-			fmt.Printf("[Testsql] [%v] Insertion log %v\n", i, result)
-			if err != nil {
-				// fmt.Printf("[Testsql] [%v] Insertion Error %v\n", i, err.Error())
+			/*
+				if not present in map search it first in database
+			*/
+
+			if errExecDivision == nil {
+				lastInsetedIdDivision, err := resDivison.LastInsertId()
+
+				if err != nil {
+					fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+				}
+
+				mapperDivison[temp.Division] = int(lastInsetedIdDivision)
+			}
+
+			fmt.Printf("Testsql] [%v] lasteInsertionId Division is [%v]\n", i, mapperDivison[temp.Division])
+
+			_, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
+			_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, 1)
+
+			if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
+				fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
 			}
 
 		}
@@ -116,4 +157,17 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	})
 	defer mySql.Close()
 
+}
+
+func isValidEntry(temp PropertyDTO) bool {
+	if len(temp.Division) > 0 &&
+		len(temp.Station) > 0 &&
+		len(temp.Sector) > 0 &&
+		len(temp.Group) > 0 &&
+		len(temp.FlatNo) > 0 &&
+		temp.ReversePrice > 0 &&
+		temp.EMD > 0 {
+		return true
+	}
+	return false
 }
