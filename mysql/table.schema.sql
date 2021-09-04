@@ -22,10 +22,8 @@ CREATE TABLE fre(
     flatno VARCHAR(50) NOT NULL,
     reserveprice VARCHAR(50) NOT NULL,
     emd VARCHAR(50) NOT NULL,
-    userId INT,
+    userId INT Not NULL,
     ssgId INT,
-    FOREIGN KEY (userId) REFERENCES ssg(userId)
-    FOREIGN KEY (userId) REFERENCES ssg(userId)
+    FOREIGN KEY (ssgId) REFERENCES ssg(ssgId)
 );
-
 
