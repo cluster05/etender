@@ -40,6 +40,8 @@ func GetDivision(c *gin.Context) {
 		"data": Divisions,
 	})
 
+	// write else block and here
+
 	defer mySql.Close()
 }
 
@@ -79,6 +81,7 @@ func GetSSG(c *gin.Context) {
 
 		defer mySql.Close()
 	}
+	// write else block and here
 
 }
 func GetFRE(c *gin.Context) {
@@ -116,5 +119,6 @@ func GetFRE(c *gin.Context) {
 		})
 
 	}
+	// write else block and here
 	defer mySql.Close()
 }
