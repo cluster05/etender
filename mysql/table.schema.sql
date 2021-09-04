@@ -1,5 +1,8 @@
+DROP DATABASE tenderDB;
+
 CREATE DATABASE tenderDB;
 
+use tenderDB;
 
 CREATE TABLE division(
     divisionId INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -26,4 +29,6 @@ CREATE TABLE fre(
     ssgId INT,
     FOREIGN KEY (ssgId) REFERENCES ssg(ssgId)
 );
+
+use tenderDB;
 
