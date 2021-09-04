@@ -141,8 +141,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		return
 	}
 
-	// var propertyDTO []PropertyDTO
-
 	rows, err := xlsx.Rows("All")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -163,90 +161,137 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	if count == 7 {
 		isValidExcel = true
 	} else {
-
 		c.JSON(401, gin.H{
 			"message":     "error in excel file",
 			"isvalidfile": isValidExcel,
 		})
-
 	}
 
 	mySql := mysql.MysqlDB()
 
-	type SSGView struct {
-		uniquestream string
-		ssgId        int
-	}
-
 	mapperDivison := make(map[string]int)
-	// mapperSSG := make(map[string]SSGView)
+	mapperSSG := make(map[string]int)
+
+	type Counter struct {
+		skipedEntry   int
+		insertedEntry int
+		totalEntry    int
+	}
+	var counter Counter
 
 	for i, row := range xlsx.GetRows("All") {
 
 		reversePrice, errReversePrice := strconv.Atoi(row[5])
 		emd, errEMD := strconv.Atoi(row[6])
 
-		/*
-			handler uppercase lower case to avoid duplicate entry
-		*/
-		var temp = PropertyDTO{
-			Division:     strings.ToLower(row[0]),
-			Station:      row[1],
-			Sector:       row[2],
-			Group:        row[3],
-			FlatNo:       row[4],
-			ReversePrice: reversePrice,
-			EMD:          emd,
-		}
+		if errReversePrice == nil && errEMD == nil {
 
-		if errReversePrice == nil && errEMD == nil && isValidEntry(temp) {
-
-			uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
-
-			stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
-			stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
-			stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
-			defer stmtDivision.Close()
-			defer stmtSSG.Close()
-			defer stmtFRE.Close()
-
-			if errDivison != nil && errSSG != nil && errFRE != nil {
-				c.JSON(201, gin.H{
-					"message": "error in query writring contact developer",
-				})
-				defer mySql.Close()
+			var temp = PropertyDTO{
+				Division:     strings.ToLower(row[0]),
+				Station:      row[1],
+				Sector:       row[2],
+				Group:        row[3],
+				FlatNo:       row[4],
+				ReversePrice: reversePrice,
+				EMD:          emd,
 			}
 
-			resDivison, errExecDivision := stmtDivision.Exec(temp.Division)
+			if isValidEntry(temp) {
 
-			/*
-				if not present in map search it first in database
-			*/
+				uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
 
-			if errExecDivision == nil {
-				lastInsetedIdDivision, err := resDivison.LastInsertId()
+				stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
+				stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
+				stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
+				defer stmtDivision.Close()
+				defer stmtSSG.Close()
+				defer stmtFRE.Close()
 
-				if err != nil {
-					fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+				if errDivison != nil && errSSG != nil && errFRE != nil {
+					c.JSON(201, gin.H{
+						"message": "error in query writring contact developer",
+					})
+					defer mySql.Close()
 				}
 
-				mapperDivison[temp.Division] = int(lastInsetedIdDivision)
+				var errExecDivision error
+				if mapperDivison[temp.Division] == 0 {
+
+					resDivision, errExecDivision := stmtDivision.Exec(temp.Division)
+
+					if errExecDivision == nil {
+						lastInsetedIdDivision, err := resDivision.LastInsertId()
+
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+
+						mapperDivison[temp.Division] = int(lastInsetedIdDivision)
+					} else {
+						var tempDivisionId int
+						err := mySql.QueryRow("SELECT divisionId from division WHERE name= ? ", temp.Division).Scan(&tempDivisionId)
+
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+						mapperDivison[temp.Division] = tempDivisionId
+					}
+				}
+
+				var errExceSSG error
+				if mapperSSG[uniquestream] == 0 {
+
+					resSSG, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
+
+					if errExceSSG == nil {
+
+						lastInsetedIdDivision, err := resSSG.LastInsertId()
+
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+						mapperSSG[uniquestream] = int(lastInsetedIdDivision)
+
+					} else {
+
+						var tempSSGId int
+						err := mySql.QueryRow("SELECT ssgId from ssg WHERE uniquestream= ? ", uniquestream).Scan(&tempSSGId)
+
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+						mapperSSG[uniquestream] = tempSSGId
+					}
+
+				}
+
+				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, mapperSSG[uniquestream])
+
+				if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
+					counter.skipedEntry++
+					fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
+					continue
+				}
+
+				counter.insertedEntry++
+
+			} else {
+				counter.skipedEntry++
 			}
-
-			fmt.Printf("Testsql] [%v] lasteInsertionId Division is [%v]\n", i, mapperDivison[temp.Division])
-
-			_, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
-			_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, 1)
-
-			if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
-				fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
-			}
-
+		} else {
+			counter.skipedEntry++
 		}
+
+		fmt.Printf("[Test SQL] Inserting value index [%v]\n", i)
+		counter.totalEntry++
+
 	}
 
-	c.JSON(201, gin.H{
-		"message": "entery inserted",
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "entery inserted",
+		"skippedEntry":  counter.skipedEntry,
+		"totalEntry":    counter.totalEntry,
+		"insertedEntry": counter.insertedEntry,
 	})
 	defer mySql.Close()
 
