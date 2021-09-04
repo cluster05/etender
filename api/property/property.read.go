@@ -45,7 +45,7 @@ func GetDivision(c *gin.Context) {
 
 func GetSSG(c *gin.Context) {
 
-	queryData := c.Param("division")
+	queryData := c.Param("divisionId")
 
 	if queryData != "" {
 		mySql := mysql.MysqlDB()
