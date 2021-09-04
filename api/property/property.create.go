@@ -109,7 +109,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 				stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
 				stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
-				stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
+				stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId,uniquefre) VALUES(?,?,?,?,?)")
 				defer stmtDivision.Close()
 				defer stmtSSG.Close()
 				defer stmtFRE.Close()
@@ -121,7 +121,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 					defer mySql.Close()
 				}
 
-				var errExecDivision error
 				if mapperDivison[temp.Division] == 0 {
 
 					resDivision, errExecDivision := stmtDivision.Exec(temp.Division)
@@ -145,7 +144,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 					}
 				}
 
-				var errExceSSG error
 				if mapperSSG[uniquestream] == 0 {
 
 					resSSG, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
@@ -172,11 +170,13 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 				}
 
-				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, mapperSSG[uniquestream])
+				uniquefre := temp.FlatNo + "<>" + strconv.Itoa(mapperSSG[uniquestream])
 
-				if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
+				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, mapperSSG[uniquestream], uniquefre)
+
+				if errExecFRE != nil {
 					counter.skipedEntry++
-					fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
+					counter.totalEntry++
 					continue
 				}
 
@@ -195,9 +195,9 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":       "entery inserted",
-		"skippedEntry":  counter.skipedEntry,
-		"totalEntry":    counter.totalEntry,
+		"message":       "entry inserted",
+		"skippedEntry":  counter.skipedEntry - 1,
+		"totalEntry":    counter.totalEntry - 1,
 		"insertedEntry": counter.insertedEntry,
 	})
 	defer mySql.Close()
