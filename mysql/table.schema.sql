@@ -22,7 +22,7 @@ CREATE TABLE ssg(
 
 CREATE TABLE fre(
     freId INT  NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    flatno VARCHAR(50) NOT NULL UNIQUE,
+    flatno VARCHAR(50) NOT NULL,
     reserveprice VARCHAR(50) NOT NULL,
     emd VARCHAR(50) NOT NULL,
     ssgId INT,
