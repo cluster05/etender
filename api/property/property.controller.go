@@ -1,6 +1,7 @@
 package property
 
 import (
+	"database/sql"
 	"etender/mysql"
 	"fmt"
 	"log"
@@ -95,60 +96,88 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		reversePrice, errReversePrice := strconv.Atoi(row[5])
 		emd, errEMD := strconv.Atoi(row[6])
 
-		var temp = PropertyDTO{
-			Division:     strings.ToLower(row[0]),
-			Station:      row[1],
-			Sector:       row[2],
-			Group:        row[3],
-			FlatNo:       row[4],
-			ReversePrice: reversePrice,
-			EMD:          emd,
-		}
+		/*
+			check for error in convertion
+			if error skip
+			else good to process
+		*/
+		if errReversePrice == nil && errEMD == nil {
 
-		if errReversePrice == nil && errEMD == nil && isValidEntry(temp) {
-
-			uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
-
-			stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
-			stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
-			stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
-			defer stmtDivision.Close()
-			defer stmtSSG.Close()
-			defer stmtFRE.Close()
-
-			if errDivison != nil && errSSG != nil && errFRE != nil {
-				c.JSON(201, gin.H{
-					"message": "error in query writring contact developer",
-				})
-				defer mySql.Close()
+			var temp = PropertyDTO{
+				Division:     strings.ToLower(row[0]),
+				Station:      row[1],
+				Sector:       row[2],
+				Group:        row[3],
+				FlatNo:       row[4],
+				ReversePrice: reversePrice,
+				EMD:          emd,
 			}
 
-			resDivison, errExecDivision := stmtDivision.Exec(temp.Division)
+			if isValidEntry(temp) {
 
-			/*
-				if not present in map search it first in database
-			*/
+				uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
 
-			if errExecDivision == nil {
-				lastInsetedIdDivision, err := resDivison.LastInsertId()
+				stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
+				stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
+				stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId) VALUES(?,?,?,?)")
+				defer stmtDivision.Close()
+				defer stmtSSG.Close()
+				defer stmtFRE.Close()
 
-				if err != nil {
-					fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+				if errDivison != nil && errSSG != nil && errFRE != nil {
+					c.JSON(201, gin.H{
+						"message": "error in query writring contact developer",
+					})
+					defer mySql.Close()
 				}
 
-				mapperDivison[temp.Division] = int(lastInsetedIdDivision)
+				var resDivision sql.Result
+				var errExecDivision error
+
+				if mapperDivison[temp.Division] == 0 {
+
+					fmt.Println("Insertion avoided")
+					resDivision, errExecDivision = stmtDivision.Exec(temp.Division)
+
+					if errExecDivision == nil {
+						lastInsetedIdDivision, err := resDivision.LastInsertId()
+
+						// implement skip query
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+
+						mapperDivison[temp.Division] = int(lastInsetedIdDivision)
+					} else {
+						var tempDivisionId int
+						err := mySql.QueryRow("SELECT divisionId from division WHERE name= ? ", temp.Division).Scan(&tempDivisionId)
+						if err != nil {
+							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+						}
+
+						fmt.Printf("[Duplicate Entry Found Make Map for it] %v\n", tempDivisionId)
+						mapperDivison[temp.Division] = tempDivisionId
+					}
+				}
+
+				_, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
+				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, 1)
+
+				// implement skip query
+				if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
+					//implement skip entry if data is repeated
+					fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
+				}
+
+			} else {
+				// implement skip entry
+
 			}
-
-			fmt.Printf("Testsql] [%v] lasteInsertionId Division is [%v]\n", i, mapperDivison[temp.Division])
-
-			_, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
-			_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, 1)
-
-			if errExecDivision != nil && errExceSSG != nil && errExecFRE != nil {
-				fmt.Printf("[Testsql] [%v] Insertion \nDivision Error %v\n SSG Error %v\n FRE Error %v\n", i, errExecDivision.Error(), errExceSSG.Error(), errExecFRE.Error())
-			}
-
+		} else {
+			// implement skip entry
 		}
+
+		// implement total entry
 	}
 
 	c.JSON(201, gin.H{
