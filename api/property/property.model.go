@@ -10,20 +10,20 @@ type PropertyDTO struct {
 	EMD          int
 }
 
-type Ssg struct {
-	SsgId   int
+type SSG struct {
+	SSGId   int
 	Station string
 	Sector  string
 	Pgroup  string
 }
-type Fre struct {
-	FreId        int
+type FRE struct {
+	FREId        int
 	FlatNo       string
 	ReservePrice string
 	EMD          string
 }
 
-type Division struct {
+type DivisionView struct {
 	DivisionID int
 	Name       string
 }
