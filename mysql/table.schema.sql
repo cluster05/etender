@@ -25,12 +25,10 @@ CREATE TABLE fre(
     flatno VARCHAR(50) NOT NULL,
     reserveprice VARCHAR(50) NOT NULL,
     emd VARCHAR(50) NOT NULL,
+    userId INT Not NULL,
     ssgId INT,
     FOREIGN KEY (ssgId) REFERENCES ssg(ssgId)
 );
 
 use tenderDB;
-
-
-
 
