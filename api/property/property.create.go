@@ -50,18 +50,24 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 	var count = 0
 	headers := []string{"Division", "Station", "Sector", "Group", "Flat No.", "Reserve price", "EMD"}
+
+	var checkForMissingColumns string = " Following columns are missing : "
+
 	for rows.Next() {
 		row := rows.Columns()
 		for i, val := range row {
 			if headers[i] == val {
 				count++
+			} else {
+				checkForMissingColumns += headers[i] + " "
 			}
 		}
 		break
 	}
 
 	if count != 7 {
-		handler.ErrorHandler(c, http.StatusBadRequest, "look like you tempered with main template that provided", err)
+		errorString := "look like you tempered with main template that provided by us." + checkForMissingColumns
+		handler.ErrorHandler(c, http.StatusBadRequest, errorString, err)
 		return
 	}
 
