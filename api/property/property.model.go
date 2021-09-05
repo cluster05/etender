@@ -11,19 +11,19 @@ type PropertyDTO struct {
 }
 
 type SSG struct {
-	SSGId   int
-	Station string
-	Sector  string
-	Pgroup  string
+	SSGId   int    `json:"ssgId"`
+	Station string `json:"station"`
+	Sector  string `json:"sector"`
+	Pgroup  string `json:"pgroup"`
 }
 type FRE struct {
-	FREId        int
-	FlatNo       string
-	ReservePrice string
-	EMD          string
+	FREId        int    `json:"freId"`
+	FlatNo       string `json:"flatNo"`
+	ReservePrice string `json:"reservePrice"`
+	EMD          string `json:"emd"`
 }
 
 type DivisionView struct {
-	DivisionID int
-	Name       string
+	DivisionID int    `json:"divisionId"`
+	Name       string `json:"name"`
 }

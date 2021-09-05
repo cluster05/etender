@@ -1,6 +1,7 @@
 package property
 
 import (
+	"etender/api/handler"
 	"etender/mysql"
 	"fmt"
 	"log"
@@ -27,18 +28,13 @@ func GetDivision(c *gin.Context) {
 		var result DivisionView
 		err := stmt.Scan(&result.DivisionID, &result.Name)
 		if err != nil {
-			fmt.Printf("[GetData] Error Scanning Data %v\n", err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Query Failed",
-				"err":     err.Error(),
-			})
+			fmt.Printf("[GetData] Error Scssanning Data %v\n", err.Error())
+			handler.ErrorHandler(c, "Query Failed", http.StatusInternalServerError, err.Error())
 		}
 		Divisions = append(Divisions, result)
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": Divisions,
-	})
+	handler.SuccessHandler(c, http.StatusOK, Divisions)
 
 	// write else block and here
 
@@ -54,10 +50,7 @@ func GetSSG(c *gin.Context) {
 		stmt, err := mySql.Query("SELECT ssgid,station,sector,pgroup FROM ssg WHERE divisionId = ?", queryData)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Query Failed",
-				"err":     err.Error(),
-			})
+			handler.ErrorHandler(c, "Query Failed", http.StatusInternalServerError, err.Error())
 		}
 		defer stmt.Close()
 
@@ -67,19 +60,15 @@ func GetSSG(c *gin.Context) {
 			var result SSG
 			if err := stmt.Scan(&result.SSGId, &result.Station, &result.Sector,
 				&result.Pgroup); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Query Failed",
-					"err":     err.Error(),
-				})
+				handler.ErrorHandler(c, "Query Failed", http.StatusInternalServerError, err.Error())
 			}
 			Ssgs = append(Ssgs, result)
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": Ssgs,
-		})
+		handler.SuccessHandler(c, http.StatusOK, Ssgs)
 
 		defer mySql.Close()
+	} else {
+		handler.ErrorHandler(c, "Pass Query", http.StatusBadRequest, "Param Not Passed")
 	}
 	// write else block and here
 
@@ -93,10 +82,7 @@ func GetFRE(c *gin.Context) {
 	if queryData != "" {
 		if err != nil {
 			log.Println(err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Query Failed",
-				"err":     err.Error(),
-			})
+			handler.ErrorHandler(c, "Query Failed", http.StatusInternalServerError, err.Error())
 		}
 		defer stmt.Close()
 
@@ -106,18 +92,13 @@ func GetFRE(c *gin.Context) {
 			var result FRE
 			err = stmt.Scan(&result.FREId, &result.FlatNo, &result.ReservePrice, &result.EMD)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Query Failed",
-					"err":     err.Error(),
-				})
+				handler.ErrorHandler(c, "Query Failed", http.StatusInternalServerError, err.Error())
 			}
 			Fres = append(Fres, result)
 		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"data": Fres,
-		})
-
+		handler.SuccessHandler(c, http.StatusOK, Fres)
+	} else {
+		handler.ErrorHandler(c, "Pass Query", http.StatusBadRequest, "Param Not Passed")
 	}
 	// write else block and here
 	defer mySql.Close()
