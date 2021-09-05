@@ -1,6 +1,7 @@
 package middlewere
 
 import (
+	"etender/api/handler"
 	"fmt"
 	"net/http"
 	"strings"
@@ -52,14 +53,12 @@ func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		err := TokenValid(c.Request)
 		if err != nil {
-			fmt.Printf("\n[Auth Middlewere] Error occured : %v\n", err.Error())
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"Error": err.Error(),
-			})
+			fmt.Printf("\n[Auth Middlewere][Logger] Error occured : %v\n", err.Error())
+			handler.ErrorHandler(c, http.StatusUnauthorized, "Unauthorized route", err)
 			c.Abort()
 			return
 		}
-		fmt.Println("[Auth Middlewere] Passed")
+		fmt.Println("[Auth Middlewere][Logger] Passed")
 		c.Next()
 	}
 }
