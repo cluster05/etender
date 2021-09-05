@@ -1,6 +1,7 @@
 package property
 
 import (
+	"etender/api/handler"
 	"etender/mysql"
 	"fmt"
 	"log"
@@ -194,12 +195,14 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":       "entry inserted",
-		"skippedEntry":  counter.skipedEntry - 1,
-		"totalEntry":    counter.totalEntry - 1,
-		"insertedEntry": counter.insertedEntry,
-	})
+	response := make(map[string]int)
+
+	response["skippedEntry"] = counter.skipedEntry - 1
+	response["totalEntry"] = counter.totalEntry - 1
+	response["insertedEntry"] = counter.insertedEntry
+
+	handler.SuccessHandler(c, http.StatusCreated, "entry inseted", response)
+
 	defer mySql.Close()
 
 }

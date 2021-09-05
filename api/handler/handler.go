@@ -4,15 +4,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ErrorHandler(c *gin.Context, message string, status int, err string) {
+func ErrorHandler(c *gin.Context, status int, message string, err error) {
 	c.JSON(status, gin.H{
 		"message": message,
-		"err":     err,
+		"err":     err.Error(),
 	})
 }
 
-func SuccessHandler(c *gin.Context, status int, data interface{}) {
+func SuccessHandler(c *gin.Context, status int, message string, data interface{}) {
 	c.JSON(status, gin.H{
-		"data": data,
+		"message":  message,
+		"response": data,
 	})
 }
