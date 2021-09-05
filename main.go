@@ -1,6 +1,7 @@
 package main
 
 import (
+	"etender/api/auth"
 	"etender/api/property"
 
 	"github.com/gin-gonic/gin"
@@ -14,6 +15,7 @@ func main() {
 	router := gin.Default()
 	router.Use(cors.Default())
 
+	auth.Routes(router)
 	property.Routes(router)
 
 	router.Run(PORT)
