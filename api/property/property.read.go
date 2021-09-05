@@ -75,7 +75,7 @@ func GetSSG(c *gin.Context) {
 }
 func GetFRE(c *gin.Context) {
 	mySql := mysql.MysqlDB()
-	queryData := c.Param("ssgid")
+	queryData := c.Param("ssgId")
 
 	stmt, err := mySql.Query("SELECT freid,flatno,reserveprice,emd FROM fre WHERE ssgId = ?", queryData)
 
