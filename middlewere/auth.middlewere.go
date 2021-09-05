@@ -12,9 +12,6 @@ import (
 
 const jwtSecretKey = "SECRET_KEY"
 
-type AccessToken struct {
-}
-
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
 	strArr := strings.Split(bearToken, " ")
