@@ -4,7 +4,6 @@ import (
 	"etender/api/handler"
 	"etender/mysql"
 	"fmt"
-	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -20,9 +19,7 @@ func SaveExcel(c *gin.Context) {
 	file, err := c.FormFile("file")
 
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": "No file is received",
-		})
+		handler.ErrorHandler(c, http.StatusBadRequest, "error in saving excel file", err)
 		return
 	}
 
@@ -30,28 +27,25 @@ func SaveExcel(c *gin.Context) {
 
 	newFileName := uuid.New().String() + extension
 	if err := c.SaveUploadedFile(file, "./excelfiles/"+newFileName); err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "Unable to save the file",
-			"error":   err.Error(),
-		})
+		handler.ErrorHandler(c, http.StatusBadRequest, "error in saving excel file", err)
 		return
 	}
-	log.Println("[file] saved")
 	saveExcelInDB(newFileName, c)
 }
 
 func saveExcelInDB(filename string, c *gin.Context) {
 
 	xlsx, err := excelize.OpenFile("./excelfiles/" + filename)
+
 	if err != nil {
-		fmt.Println(err.Error())
-		print("failed to read")
+		handler.ErrorHandler(c, http.StatusBadRequest, "error reading excel file", err)
 		return
 	}
 
 	rows, err := xlsx.Rows("All")
 	if err != nil {
-		fmt.Println(err.Error())
+		handler.ErrorHandler(c, http.StatusBadRequest, "unable to read excel file", err)
+		return
 	}
 
 	var count = 0
@@ -65,27 +59,36 @@ func saveExcelInDB(filename string, c *gin.Context) {
 		}
 		break
 	}
-	var isValidExcel = false
-	if count == 7 {
-		isValidExcel = true
-	} else {
-		c.JSON(401, gin.H{
-			"message":     "error in excel file",
-			"isvalidfile": isValidExcel,
-		})
+
+	if count != 7 {
+		handler.ErrorHandler(c, http.StatusBadRequest, "look like you tempered with main template that provided", err)
+		return
 	}
 
 	mySql := mysql.MysqlDB()
+	defer mySql.Close()
+
+	stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
+	stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
+	stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId,uniquefre) VALUES(?,?,?,?,?)")
+	defer stmtDivision.Close()
+	defer stmtSSG.Close()
+	defer stmtFRE.Close()
+
+	if errDivison != nil && errSSG != nil && errFRE != nil {
+		handler.ErrorHandler(c, http.StatusInternalServerError, "error in query. contact developer :).", fmt.Errorf(":("))
+		defer mySql.Close()
+		return
+	}
 
 	mapperDivison := make(map[string]int)
 	mapperSSG := make(map[string]int)
 
-	type Counter struct {
+	counter := struct {
 		skipedEntry   int
 		insertedEntry int
 		totalEntry    int
-	}
-	var counter Counter
+	}{}
 
 	for i, row := range xlsx.GetRows("All") {
 
@@ -96,7 +99,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 			var temp = PropertyDTO{
 				Division:     strings.ToLower(row[0]),
-				Station:      row[1],
+				Station:      strings.ToLower(row[1]),
 				Sector:       row[2],
 				Group:        row[3],
 				FlatNo:       row[4],
@@ -108,20 +111,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 				uniquestream := temp.Station + "<>" + temp.Sector + "<>" + temp.Group
 
-				stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
-				stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
-				stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId,uniquefre) VALUES(?,?,?,?,?)")
-				defer stmtDivision.Close()
-				defer stmtSSG.Close()
-				defer stmtFRE.Close()
-
-				if errDivison != nil && errSSG != nil && errFRE != nil {
-					c.JSON(201, gin.H{
-						"message": "error in query writring contact developer",
-					})
-					defer mySql.Close()
-				}
-
 				if mapperDivison[temp.Division] == 0 {
 
 					resDivision, errExecDivision := stmtDivision.Exec(temp.Division)
@@ -130,7 +119,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 						lastInsetedIdDivision, err := resDivision.LastInsertId()
 
 						if err != nil {
-							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+							fmt.Printf("[PROPERTY][CREATE][logger] [%v] Error %v  \n", i, err.Error())
 						}
 
 						mapperDivison[temp.Division] = int(lastInsetedIdDivision)
@@ -139,7 +128,9 @@ func saveExcelInDB(filename string, c *gin.Context) {
 						err := mySql.QueryRow("SELECT divisionId from division WHERE name= ? ", temp.Division).Scan(&tempDivisionId)
 
 						if err != nil {
-							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+							if err != nil {
+								fmt.Printf("[PROPERTY][CREATE][logger] [%v] Error %v  \n", i, err.Error())
+							}
 						}
 						mapperDivison[temp.Division] = tempDivisionId
 					}
@@ -154,7 +145,9 @@ func saveExcelInDB(filename string, c *gin.Context) {
 						lastInsetedIdDivision, err := resSSG.LastInsertId()
 
 						if err != nil {
-							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+							if err != nil {
+								fmt.Printf("[PROPERTY][CREATE][logger] [%v] Error %v  \n", i, err.Error())
+							}
 						}
 						mapperSSG[uniquestream] = int(lastInsetedIdDivision)
 
@@ -164,7 +157,9 @@ func saveExcelInDB(filename string, c *gin.Context) {
 						err := mySql.QueryRow("SELECT ssgId from ssg WHERE uniquestream= ? ", uniquestream).Scan(&tempSSGId)
 
 						if err != nil {
-							fmt.Printf("[Testsql] [%v] Error %v  \n", i, err.Error())
+							if err != nil {
+								fmt.Printf("[PROPERTY][CREATE][logger] [%v] Error %v  \n", i, err.Error())
+							}
 						}
 						mapperSSG[uniquestream] = tempSSGId
 					}
@@ -202,8 +197,6 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	response["insertedEntry"] = counter.insertedEntry
 
 	handler.SuccessHandler(c, http.StatusCreated, "entry inseted", response)
-
-	defer mySql.Close()
 
 }
 
