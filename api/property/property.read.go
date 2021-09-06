@@ -64,7 +64,6 @@ func GetSSG(c *gin.Context) {
 			ssgIdPgroup.SSGId = result.SSGId
 			ssgIdPgroup.Pgroup = result.Pgroup
 			if _, ok := SSGMap[result.Station]; !ok {
-				log.Println(map1)
 				map1 = make(map[string][]SSG)
 			}
 			map1[result.Sector] = append(map1[result.Sector], ssgIdPgroup)
