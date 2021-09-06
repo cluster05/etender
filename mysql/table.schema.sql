@@ -23,8 +23,12 @@ CREATE TABLE ssg(
     pgroup VARCHAR(50) NOT NULL,
     uniquestream VARCHAR(150) NOT NULL UNIQUE,
     divisionId INT,
-    FOREIGN KEY (divisionId) REFERENCES division(divisionId)
+    constraint divisionId
+        FOREIGN KEY (divisionId)
+        REFERENCES division (divisionId)
+        ON DELETE CASCADE
 );
+
 
 
 CREATE TABLE fre(
@@ -34,7 +38,10 @@ CREATE TABLE fre(
     emd VARCHAR(50) NOT NULL,
     uniquefre VARCHAR(50) NOT NULL UNIQUE,
     ssgId INT,
-    FOREIGN KEY (ssgId) REFERENCES ssg(ssgId)
+    constraint ssgId
+        FOREIGN KEY (ssgId)
+        REFERENCES ssg (ssgId)
+        ON DELETE CASCADE
 );
 
 use tenderDB;

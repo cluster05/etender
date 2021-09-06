@@ -12,6 +12,7 @@ import (
 
 func GetDivision(c *gin.Context) {
 	mySql := mysql.MysqlDB()
+	defer mySql.Close()
 	stmt, err := mySql.Query("SELECT divisionId,name FROM division")
 
 	var Divisions []DivisionView
@@ -37,16 +38,14 @@ func GetDivision(c *gin.Context) {
 	handler.SuccessHandler(c, http.StatusOK, "success", Divisions)
 
 	// write else block and here
-
-	defer mySql.Close()
 }
 
 func GetSSG(c *gin.Context) {
-
 	queryData := c.Param("divisionId")
 
 	if queryData != "" {
 		mySql := mysql.MysqlDB()
+		defer mySql.Close()
 		stmt, err := mySql.Query("SELECT ssgid,station,sector,pgroup FROM ssg WHERE divisionId = ?", queryData)
 
 		if err != nil {
@@ -65,8 +64,6 @@ func GetSSG(c *gin.Context) {
 			Ssgs = append(Ssgs, result)
 		}
 		handler.SuccessHandler(c, http.StatusOK, "success", Ssgs)
-
-		defer mySql.Close()
 	} else {
 		handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", fmt.Errorf(""))
 	}
@@ -74,12 +71,12 @@ func GetSSG(c *gin.Context) {
 
 }
 func GetFRE(c *gin.Context) {
-	mySql := mysql.MysqlDB()
 	queryData := c.Param("ssgId")
 
-	stmt, err := mySql.Query("SELECT freid,flatno,reserveprice,emd FROM fre WHERE ssgId = ?", queryData)
-
 	if queryData != "" {
+		mySql := mysql.MysqlDB()
+		defer mySql.Close()
+		stmt, err := mySql.Query("SELECT freid,flatno,reserveprice,emd FROM fre WHERE ssgId = ?", queryData)
 		if err != nil {
 			log.Println(err)
 			handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", err)
@@ -99,8 +96,7 @@ func GetFRE(c *gin.Context) {
 		handler.SuccessHandler(c, http.StatusOK, "success", Fres)
 
 	} else {
-		handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", err)
+		handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", fmt.Errorf(""))
 	}
 	// write else block and here
-	defer mySql.Close()
 }
