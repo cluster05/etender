@@ -10,6 +10,8 @@ type PropertyDTO struct {
 	EMD          int
 }
 
+var SSGMap = make(map[string]map[string][]SSG)
+
 type SSG struct {
 	SSGId   int    `json:"ssgId"`
 	Station string `json:"station"`

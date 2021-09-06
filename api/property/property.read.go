@@ -52,18 +52,25 @@ func GetSSG(c *gin.Context) {
 			handler.ErrorHandler(c, http.StatusInternalServerError, "Query Failed", err)
 		}
 		defer stmt.Close()
-
-		var Ssgs []SSG
-
+		var SSGMap = make(map[string]map[string][]SSG)
+		var map1 = make(map[string][]SSG)
 		for stmt.Next() {
 			var result SSG
 			if err := stmt.Scan(&result.SSGId, &result.Station, &result.Sector,
 				&result.Pgroup); err != nil {
 				handler.ErrorHandler(c, http.StatusInternalServerError, "Query Failed", err)
 			}
-			Ssgs = append(Ssgs, result)
+			var ssgIdPgroup SSG
+			ssgIdPgroup.SSGId = result.SSGId
+			ssgIdPgroup.Pgroup = result.Pgroup
+			if _, ok := SSGMap[result.Station]; !ok {
+				log.Println(map1)
+				map1 = make(map[string][]SSG)
+			}
+			map1[result.Sector] = append(map1[result.Sector], ssgIdPgroup)
+			SSGMap[result.Station] = map1
 		}
-		handler.SuccessHandler(c, http.StatusOK, "success", Ssgs)
+		handler.SuccessHandler(c, http.StatusOK, "success", SSGMap)
 	} else {
 		handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", fmt.Errorf(""))
 	}
