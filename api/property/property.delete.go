@@ -15,24 +15,25 @@ func DeleteDivision(c *gin.Context) {
 }
 
 func DeleteFRE(c *gin.Context) {
-	queryData := c.Param("ssgId")
-	deleteData(c, queryData, "ssg", "ssgId")
+	queryData := c.Param("freId")
+	deleteData(c, queryData, "fre", "freId")
 }
 
 func DeleteSSG(c *gin.Context) {
-	queryData := c.Param("freId")
-	deleteData(c, queryData, "fre", "freId")
+	queryData := c.Param("ssgId")
+	deleteData(c, queryData, "ssg", "ssgId")
 }
 
 func deleteData(c *gin.Context, queryData, from, where string) {
 	if queryData != "" {
 		mySql := mysql.MysqlDB()
 		defer mySql.Close()
-		delForm, err := mySql.Prepare("DELETE FROM ? WHERE ?=?")
+		q := "DELETE FROM " + from + " Where " + where + "=?"
+		delForm, err := mySql.Prepare(q)
 		if err != nil {
 			handler.ErrorHandler(c, http.StatusBadRequest, "Query Failed", err)
 		}
-		delForm.Exec(from, where, queryData)
+		delForm.Exec(queryData)
 	} else {
 		handler.ErrorHandler(c, http.StatusBadRequest, "Could Not Delete", fmt.Errorf(""))
 	}
