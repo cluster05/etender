@@ -80,6 +80,7 @@ func GetSSG(c *gin.Context) {
 					var tree3 Tree
 					tree3.Text = v3.Pgroup
 					tree3.SsgId = v3.SSGId
+					tree3.Level = "ssg"
 					tree2.Children = append(tree2.Children, tree3)
 				}
 				tree1.Children = append(tree1.Children, tree2)

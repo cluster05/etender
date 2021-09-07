@@ -21,6 +21,8 @@ CREATE TABLE ssg(
     station VARCHAR(50) NOT NULL,
     sector VARCHAR(50) NOT NULL,
     pgroup VARCHAR(50) NOT NULL,
+    reserveprice INT NOT NULL,
+    emd INT NOT NULL,
     uniquestream VARCHAR(150) NOT NULL UNIQUE,
     divisionId INT,
     constraint divisionId
@@ -34,8 +36,6 @@ CREATE TABLE ssg(
 CREATE TABLE fre(
     freId INT  NOT NULL AUTO_INCREMENT PRIMARY KEY,
     flatno VARCHAR(50) NOT NULL,
-    reserveprice VARCHAR(50) NOT NULL,
-    emd VARCHAR(50) NOT NULL,
     uniquefre VARCHAR(50) NOT NULL UNIQUE,
     ssgId INT,
     constraint ssgId

@@ -14,6 +14,7 @@ type Tree struct {
 	Text     string `json:"name"`
 	SsgId    int    `json:"ssgId"`
 	Children []Tree `json:"children"`
+	Level    string `json:"level"`
 }
 type SSG struct {
 	SSGId   int    `json:"ssgId"`

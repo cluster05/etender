@@ -75,8 +75,8 @@ func saveExcelInDB(filename string, c *gin.Context) {
 	defer mySql.Close()
 
 	stmtDivision, errDivison := mySql.Prepare("INSERT INTO division(name) VALUES(?)")
-	stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,uniquestream,divisionId) VALUES(?,?,?,?,?)")
-	stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,reserveprice,emd,ssgId,uniquefre) VALUES(?,?,?,?,?)")
+	stmtSSG, errSSG := mySql.Prepare("INSERT INTO ssg(station,sector,pgroup,reserveprice,emd,uniquestream,divisionId) VALUES(?,?,?,?,?,?,?)")
+	stmtFRE, errFRE := mySql.Prepare("INSERT INTO fre(flatno,ssgId,uniquefre) VALUES(?,?,?)")
 	defer stmtDivision.Close()
 	defer stmtSSG.Close()
 	defer stmtFRE.Close()
@@ -144,7 +144,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 				if mapperSSG[uniquestream] == 0 {
 
-					resSSG, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, uniquestream, mapperDivison[temp.Division])
+					resSSG, errExceSSG := stmtSSG.Exec(temp.Station, temp.Sector, temp.Group, temp.ReversePrice, temp.EMD, uniquestream, mapperDivison[temp.Division])
 
 					if errExceSSG == nil {
 
@@ -174,7 +174,7 @@ func saveExcelInDB(filename string, c *gin.Context) {
 
 				uniquefre := temp.FlatNo + "<>" + strconv.Itoa(mapperSSG[uniquestream])
 
-				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, temp.ReversePrice, temp.EMD, mapperSSG[uniquestream], uniquefre)
+				_, errExecFRE := stmtFRE.Exec(temp.FlatNo, mapperSSG[uniquestream], uniquefre)
 
 				if errExecFRE != nil {
 					counter.skipedEntry++
