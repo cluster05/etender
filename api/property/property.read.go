@@ -69,9 +69,10 @@ func GetSSG(c *gin.Context) {
 			map1[result.Sector] = append(map1[result.Sector], ssgIdPgroup)
 			SSGMap[result.Station] = map1
 		}
-		var tree Tree
+		var tree []Tree
 		for i, v := range SSGMap {
-			tree.Text = i
+			var tree1 Tree
+			tree1.Text = i
 			for i2, v2 := range v {
 				var tree2 Tree
 				tree2.Text = i2
@@ -81,8 +82,9 @@ func GetSSG(c *gin.Context) {
 					tree3.SsgId = v3.SSGId
 					tree2.Children = append(tree2.Children, tree3)
 				}
-				tree.Children = append(tree.Children, tree2)
+				tree1.Children = append(tree1.Children, tree2)
 			}
+			tree = append(tree, tree1)
 		}
 		handler.SuccessHandler(c, http.StatusOK, "success", tree)
 	} else {
