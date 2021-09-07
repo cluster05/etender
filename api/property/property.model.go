@@ -17,17 +17,17 @@ type Tree struct {
 	Level    string `json:"level"`
 }
 type SSG struct {
-	SSGId   int    `json:"ssgId"`
-	Station string `json:"station"`
-	Sector  string `json:"sector"`
-	Pgroup  string `json:"pgroup"`
+	SSGId        int    `json:"ssgId"`
+	Station      string `json:"station"`
+	Sector       string `json:"sector"`
+	Pgroup       string `json:"pgroup"`
+	ReservePrice string `json:"reservePrice"`
+	EMD          string `json:"emd"`
 }
 
 type FRE struct {
-	FREId        int    `json:"freId"`
-	FlatNo       string `json:"flatNo"`
-	ReservePrice string `json:"reservePrice"`
-	EMD          string `json:"emd"`
+	FREId  int    `json:"freId"`
+	FlatNo string `json:"flatNo"`
 }
 
 type DivisionView struct {
