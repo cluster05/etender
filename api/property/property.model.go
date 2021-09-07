@@ -10,8 +10,11 @@ type PropertyDTO struct {
 	EMD          int
 }
 
-var SSGMap = make(map[string]map[string][]SSG)
-
+type Tree struct {
+	Text     string `json:"text"`
+	SsgId    int    `json:"ssgId"`
+	Children []Tree `json:"children"`
+}
 type SSG struct {
 	SSGId   int    `json:"ssgId"`
 	Station string `json:"station"`
