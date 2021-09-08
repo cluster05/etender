@@ -82,6 +82,7 @@ func GetSSG(c *gin.Context) {
 					var tree3 Tree
 					tree3.Text = v3.Pgroup + "| [RP] " + v3.ReservePrice + " | [EMD] " + v3.EMD
 					tree3.SsgId = v3.SSGId
+					tree3.Level = "ssg"
 					tree3.Children = []Tree{}
 					tree2.Children = append(tree2.Children, tree3)
 				}
