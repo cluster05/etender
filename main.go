@@ -13,7 +13,7 @@ const PORT = ":3000"
 func main() {
 
 	router := gin.Default()
-	router.Use(cors.Default())
+	router.Use(cors.AllowAll())
 
 	auth.Routes(router)
 	property.Routes(router)
