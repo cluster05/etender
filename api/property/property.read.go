@@ -75,11 +75,11 @@ func GetSSG(c *gin.Context) {
 		var tree []Tree
 		for i, v := range SSGMap {
 			var tree1 Tree
-			tree1.Text = i
+			tree1.Name = i
 			tree1.EditNodeDisabled = true
 			for i2, v2 := range v {
 				var tree2 Tree
-				tree2.Text = i2
+				tree2.Name = i2
 				tree2.EditNodeDisabled = true
 
 				for _, v3 := range v2 {
@@ -87,8 +87,8 @@ func GetSSG(c *gin.Context) {
 
 					reservePeice, _ := strconv.Atoi(v3.ReservePrice)
 					emd, _ := strconv.Atoi(v3.EMD)
-
-					tree3.Text = v3.Pgroup + "| [RP] " + v3.ReservePrice + " | [EMD] " + v3.EMD
+					tree3.Name = v3.Pgroup + "[RP] " + v3.ReservePrice + " [EMD] " + v3.EMD
+					tree3.Text = v3.Pgroup
 					tree3.SsgId = v3.SSGId
 					tree3.ReservePrice = reservePeice
 					tree3.EMD = emd

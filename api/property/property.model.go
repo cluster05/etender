@@ -11,7 +11,8 @@ type PropertyDTO struct {
 }
 
 type Tree struct {
-	Text             string `json:"name"`
+	Name             string `json:"name"`
+	Text             string `json:"text"`
 	SsgId            int    `json:"ssgId"`
 	Children         []Tree `json:"children"`
 	Level            string `json:"level"`
