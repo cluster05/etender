@@ -5,6 +5,7 @@ import (
 	"etender/mysql"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -15,15 +16,22 @@ func UpdateDivision(c *gin.Context) {
 func UpdateSSG(c *gin.Context) {
 	ssgId := c.Param("ssgId")
 	if ssgId != "" {
-		var updateData SSG
+		var updateData = struct {
+			ReservePrice int
+			EMD          int
+		}{}
+
 		err := c.BindJSON(&updateData)
-		fmt.Println(updateData)
+
+		reservePrice := strconv.Itoa(updateData.ReservePrice)
+		emd := strconv.Itoa(updateData.EMD)
+
 		if err != nil {
 			handler.ErrorHandler(c, http.StatusBadRequest, "Send Data in proper format", fmt.Errorf("invalid data"))
 		}
 		mySql := mysql.MysqlDB()
 		defer mySql.Close()
-		sqlStatement := "UPDATE ssg SET reserveprice = " + updateData.ReservePrice + " , emd = " + updateData.EMD + " WHERE ssgId =?;"
+		sqlStatement := "UPDATE ssg SET reserveprice = " + reservePrice + " , emd = " + emd + " WHERE ssgId = ?;"
 
 		query, err := mySql.Prepare(sqlStatement)
 		if err != nil {

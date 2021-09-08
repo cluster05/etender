@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -75,14 +76,24 @@ func GetSSG(c *gin.Context) {
 		for i, v := range SSGMap {
 			var tree1 Tree
 			tree1.Text = i
+			tree1.EditNodeDisabled = true
 			for i2, v2 := range v {
 				var tree2 Tree
 				tree2.Text = i2
+				tree2.EditNodeDisabled = true
+
 				for _, v3 := range v2 {
 					var tree3 Tree
+
+					reservePeice, _ := strconv.Atoi(v3.ReservePrice)
+					emd, _ := strconv.Atoi(v3.EMD)
+
 					tree3.Text = v3.Pgroup + "| [RP] " + v3.ReservePrice + " | [EMD] " + v3.EMD
 					tree3.SsgId = v3.SSGId
+					tree3.ReservePrice = reservePeice
+					tree3.EMD = emd
 					tree3.Level = "ssg"
+					tree3.EditNodeDisabled = false
 					tree3.Children = []Tree{}
 					tree2.Children = append(tree2.Children, tree3)
 				}

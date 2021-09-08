@@ -11,10 +11,13 @@ type PropertyDTO struct {
 }
 
 type Tree struct {
-	Text     string `json:"name"`
-	SsgId    int    `json:"ssgId"`
-	Children []Tree `json:"children"`
-	Level    string `json:"level"`
+	Text             string `json:"name"`
+	SsgId            int    `json:"ssgId"`
+	Children         []Tree `json:"children"`
+	Level            string `json:"level"`
+	ReservePrice     int    `json:"reservePrice"`
+	EMD              int    `json:"emd"`
+	EditNodeDisabled bool   `json:"editNodeDisabled"`
 }
 type SSG struct {
 	SSGId        int    `json:"ssgId"`
